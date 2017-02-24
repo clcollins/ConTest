@@ -1,0 +1,28 @@
+---
+pre:
+  packages:
+    - mysql-devel
+    - tar
+    - git
+    - which
+
+  cmds:
+    - ls /etc >> /tmp/pre
+
+tests:
+  - is_runit_installed:
+      cmd: runit -v
+      validate:
+        exit: 111
+  - test_bash:
+      cmd: bash -x /tests/verify_filesystem.sh
+      validate:
+        exit: 0
+  - test_echo:
+      cmd: echo -e "hi"
+      validate:
+        stdout: "hi"
+
+post:
+  cmds:
+    - echo "COMPLETE!" >> /tmp/post
