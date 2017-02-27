@@ -117,6 +117,7 @@ def run_post(dict):
 
 def doit():
     yml = load("/tests/tests.yml")
+    fail = False
 
     if 'pre' in yml:
         try:
