@@ -65,7 +65,7 @@ def run_command(command):
     out, err = process.communicate()
     returncode = process.returncode
 
-    return_tuple = ReturnResult(returncode, out, err)
+    return_tuple = ReturnResult(returncode, out.rstrip(), err.rstrip())
     return return_tuple
 
 
