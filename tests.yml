@@ -21,7 +21,7 @@ tests:
   - test_echo:
       cmd: echo -e "hi"
       validate:
-        stdout: "hi"
+        stdout: "hi\n"
 
 post:
   cmds:
