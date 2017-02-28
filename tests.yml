@@ -10,14 +10,30 @@ pre:
     - ls /etc >> /tmp/pre
 
 tests:
-  - is_runit_installed:
-      cmd: runit -v
-      validate:
-        exit: 111
-  - test_bash:
-      cmd: bash -x /tests/verify_filesystem.sh
+  - verify_filesystem:
+      cmd: rpm -V filesystem
       validate:
         exit: 0
+  - verify_runit_rpm:
+      cmd: rpm -V runit
+      validate:
+        exit: 0
+  - verify_ssmtp_rpm:
+      cmd: rpm -V ssmtp
+      validate:
+        stdout: S.5....T.  c /etc/ssmtp/ssmtp.conf
+  - validate_ssmtp_conf:
+      cmd: md5sum /etc/ssmtp/ssmtp.conf
+      validate:
+        stdout: c3b9bb1106c0dac40a9774ae5f360f83  /etc/ssmtp/ssmtp.conf
+  - verify_logrotate_rpm:
+      cmd: rpm -V logrotate
+      validate:
+        exit: 0
+  - validate_logrotate_conf:
+      cmd: md5sum /logrotate.conf
+      validate:
+        stdout: 745904f25e900f52241274408bc74f2a  /logrotate.conf
   - test_echo:
       cmd: echo -e "hi"
       validate:
