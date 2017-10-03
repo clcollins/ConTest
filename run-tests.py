@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
+import os
 import sys
 import yaml
 import subprocess
@@ -65,36 +66,42 @@ def run_command(command):
     out, err = process.communicate()
     returncode = process.returncode
 
-    return_tuple = ReturnResult(returncode, out.rstrip(), err.rstrip())
+    return_tuple = ReturnResult(returncode, out, err)
     return return_tuple
 
 
-def validate(name, expected, result):
+def validate(name, expected, result, result_obj):
     if expected == result:
-        print "Test passed: '{}'".format(name)
+        print("{0:>{1}}".format('[Passed]', 55 - len(name)), flush=True)
         return 0
     else:
-        print "Test FAILED: '{}'".format(name)
-        print ">> expected: '{}'".format(expected)
-        print ">> returned: '{}'".format(result)
+        print("{0:>{1}}".format('[FAILED]', 55 - len(name)))
+        print(">> expected: '{}'".format(expected))
+        print(">> returned: '{}'".format(result))
+        print(">> stdout:")
+        print(result_obj.stdout)
+        print(">> stderr:")
+        print(result_obj.stderr, flush=True)
         raise FailedTest("{}:{}".format(name,result))
 
 
 def run_tests(list):
     for test in list:
         for name, data in test.items():
-            command=data["cmd"]
-            result = run_command(command)
+            print("Testing: '{}'".format(name), end='', flush=True)
 
             if len(data['validate']) > 1:
                 raise BadTestYAMLData("{} has too many validations - only one allowed".format(name))
 
+            command=data["cmd"]
+            result = run_command(command)
+
             if 'exit' in data['validate']:
-                validate(name, data['validate']['exit'], result.returncode)
+                validate(name, data['validate']['exit'], result.returncode, result)
             elif "stdout" in data['validate']:
-                validate(name, data['validate']['stdout'], result.stdout)
+                validate(name, data['validate']['stdout'].rstrip(), result.stdout.decode('UTF-8').rstrip(), result)
             elif "stderr" in data['validate']:
-                validate(name, data['validate']['stderr'], result.stderr)
+                validate(name, data['validate']['stderr'].rstrip(), result.stderr.decode('UTF-8').rstrip, result)
             else:
                 print("Unknown Validation")
                 raise BadTestYAMLData(data['validate'])
@@ -119,6 +126,8 @@ def doit():
     yml = load("/tests/tests.yml")
     fail = False
 
+    print("Starting tests", flush=True)
+
     if 'pre' in yml:
         try:
             run_pre(yml['pre'])
@@ -132,22 +141,24 @@ def doit():
             fail = True
 
 
-    if 'tests' in yml:
-        try:
-            run_tests(yml['tests'])
-        except BadTestYAMLData as e:
-            print("There is an error in the test.yml syntax:")
-            print e
-            fail = True
-        except FailedTest as e:
-            print('One or more tests have failed.')
-            print e
-            fail = True
+            if 'tests' in yml:
+                try:
+                    print("\nFrom: {}".format(file), flush=True)
+                    run_tests(yml['tests'])
+                except BadTestYAMLData as e:
+                    print("{}: syntax error".format(file))
+                    print(e, flush=True)
+                    fail = True
+                except FailedTest as e:
+                    print('One or more tests have failed in this file.')
+                    print(e, flush=True)
+                    fail = True
 
         if 'post' in yml:
            run_post(yml['post'])
 
     if fail:
+        print('One or more tests have failed.', flush=True)
         sys.exit(1)
 
 if __name__ == '__main__':
